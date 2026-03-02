@@ -29,69 +29,70 @@ function getWhatsAppUrl(property: Property) {
 export function PropertyCard({ property }: PropertyCardProps) {
   return (
     <Card
-      className="group hover-elevate flex flex-col"
+      className="group smooth-shadow card-shine flex flex-col overflow-hidden transition-all duration-300"
       data-testid={`card-property-${property.id}`}
     >
-      <div className="relative aspect-[4/3] rounded-t-[inherit]">
+      <div className="relative aspect-[4/3] img-zoom rounded-t-[inherit]">
         <img
           src={property.imageUrl || "/images/property-1.png"}
           alt={property.name}
           className="w-full h-full object-cover rounded-t-[inherit]"
           data-testid={`img-property-${property.id}`}
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent rounded-t-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          <Badge variant="secondary" data-testid={`badge-type-${property.id}`}>
+          <Badge variant="secondary" className="backdrop-blur-sm bg-background/80" data-testid={`badge-type-${property.id}`}>
             {property.propertyType}
           </Badge>
           {property.featured && (
-            <Badge data-testid={`badge-featured-${property.id}`}>
+            <Badge className="backdrop-blur-sm" data-testid={`badge-featured-${property.id}`}>
               Featured
             </Badge>
           )}
         </div>
         <div className="absolute bottom-3 right-3">
-          <Badge variant="secondary" className="text-base font-bold px-3 py-1" data-testid={`badge-price-${property.id}`}>
+          <span className="inline-flex items-center rounded-full bg-background/90 backdrop-blur-sm text-foreground text-base font-bold px-4 py-1.5 shadow-sm" data-testid={`badge-price-${property.id}`}>
             {formatPrice(property.price)}
-          </Badge>
+          </span>
         </div>
       </div>
 
       <CardContent className="flex flex-col flex-1 p-5 gap-3">
         <div>
           <h3
-            className="font-sans text-lg font-semibold line-clamp-1"
+            className="font-sans text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors duration-200"
             data-testid={`text-name-${property.id}`}
           >
             {property.name}
           </h3>
-          <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <div className="flex items-center gap-1.5 mt-1.5 text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/60" />
             <span className="font-mono text-sm line-clamp-1" data-testid={`text-location-${property.id}`}>
               {property.location}
             </span>
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground line-clamp-2 flex-1" data-testid={`text-desc-${property.id}`}>
+        <p className="text-sm text-muted-foreground line-clamp-2 flex-1 leading-relaxed" data-testid={`text-desc-${property.id}`}>
           {property.shortDescription}
         </p>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground py-2 border-t">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground py-2.5 border-t border-dashed">
           {property.bedrooms != null && (
             <div className="flex items-center gap-1.5">
-              <Bed className="h-4 w-4" />
+              <Bed className="h-4 w-4 text-primary/50" />
               <span data-testid={`text-beds-${property.id}`}>{property.bedrooms} Beds</span>
             </div>
           )}
           {property.bathrooms != null && (
             <div className="flex items-center gap-1.5">
-              <Bath className="h-4 w-4" />
+              <Bath className="h-4 w-4 text-primary/50" />
               <span data-testid={`text-baths-${property.id}`}>{property.bathrooms} Baths</span>
             </div>
           )}
           {property.area != null && (
             <div className="flex items-center gap-1.5">
-              <Maximize className="h-4 w-4" />
+              <Maximize className="h-4 w-4 text-primary/50" />
               <span data-testid={`text-area-${property.id}`}>{property.area.toLocaleString()} sqft</span>
             </div>
           )}
@@ -99,15 +100,15 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
         <div className="flex items-center gap-2 pt-1">
           <a href={getWhatsAppUrl(property)} target="_blank" rel="noopener noreferrer" className="flex-1">
-            <Button variant="default" className="w-full gap-2" data-testid={`button-enquire-${property.id}`}>
+            <Button variant="default" className="w-full gap-2 transition-transform duration-200 active:scale-[0.98]" data-testid={`button-enquire-${property.id}`}>
               <MessageCircle className="h-4 w-4" />
               Enquire
             </Button>
           </a>
           <Link href={`/properties/${property.id}`} className="flex-1">
-            <Button variant="secondary" className="w-full gap-2" data-testid={`button-learn-more-${property.id}`}>
-              Learn More
-              <ArrowRight className="h-4 w-4" />
+            <Button variant="secondary" className="w-full gap-2 transition-transform duration-200 active:scale-[0.98]" data-testid={`button-learn-more-${property.id}`}>
+              Details
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Button>
           </Link>
         </div>

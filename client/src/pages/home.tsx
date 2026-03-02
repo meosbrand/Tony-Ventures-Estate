@@ -14,6 +14,9 @@ import {
   Users,
   MapPin,
   Star,
+  Sparkles,
+  Phone,
+  Mail,
 } from "lucide-react";
 import type { Property } from "@shared/schema";
 
@@ -28,78 +31,82 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <section className="relative py-20 md:py-32 px-4 overflow-visible">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
+      <section className="relative py-24 md:py-36 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+        <div className="absolute top-20 right-[10%] w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse-soft" />
+        <div className="absolute bottom-10 left-[5%] w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse-soft" style={{ animationDelay: "1.5s" }} />
+
         <div className="max-w-7xl mx-auto relative">
           <div className="max-w-3xl">
-            <Badge variant="secondary" className="mb-4" data-testid="badge-hero-tag">
-              Premium Real Estate
-            </Badge>
+            <div className="animate-fade-in-up">
+              <Badge variant="secondary" className="mb-5 gap-1.5 px-3 py-1" data-testid="badge-hero-tag">
+                <Sparkles className="h-3 w-3" />
+                Premium Real Estate
+              </Badge>
+            </div>
             <h1
-              className="font-sans text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+              className="animate-fade-in-up stagger-1 font-sans text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.1] mb-6 tracking-tight"
               data-testid="text-hero-title"
             >
               Find Your Dream{" "}
-              <span className="text-primary">Property</span> With
-              Tony Multi Ventures
+              <span className="gradient-text">Property</span>
+              <br className="hidden sm:block" />
+              {" "}With Tony Multi Ventures
             </h1>
             <p
-              className="font-mono text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl"
+              className="animate-fade-in-up stagger-2 font-mono text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl leading-relaxed"
               data-testid="text-hero-subtitle"
             >
               Discover premium properties across Nigeria's most sought-after
               locations. From luxury villas to modern apartments, we bring your
               vision home.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="animate-fade-in-up stagger-3 flex flex-wrap items-center gap-3">
               <Link href="/properties">
-                <Button size="lg" className="gap-2" data-testid="button-browse-properties">
+                <Button size="lg" className="gap-2 px-6 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" data-testid="button-browse-properties">
                   Browse Properties
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <a href="#contact">
-                <Button size="lg" variant="secondary" data-testid="button-contact-us">
+                <Button size="lg" variant="secondary" className="px-6 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" data-testid="button-contact-us">
                   Contact Us
                 </Button>
               </a>
             </div>
 
-            <div className="flex flex-wrap items-center gap-6 mt-12 pt-8 border-t">
-              <div data-testid="stat-properties">
-                <p className="font-sans text-2xl font-bold">{allProperties?.length || 0}+</p>
-                <p className="text-sm text-muted-foreground font-mono">Properties</p>
-              </div>
-              <div className="w-px h-10 bg-border" />
-              <div data-testid="stat-clients">
-                <p className="font-sans text-2xl font-bold">200+</p>
-                <p className="text-sm text-muted-foreground font-mono">Happy Clients</p>
-              </div>
-              <div className="w-px h-10 bg-border" />
-              <div data-testid="stat-years">
-                <p className="font-sans text-2xl font-bold">10+</p>
-                <p className="text-sm text-muted-foreground font-mono">Years Experience</p>
-              </div>
+            <div className="animate-fade-in-up stagger-4 flex flex-wrap items-center gap-8 mt-14 pt-8 border-t border-dashed">
+              {[
+                { value: `${allProperties?.length || 0}+`, label: "Properties" },
+                { value: "200+", label: "Happy Clients" },
+                { value: "10+", label: "Years Experience" },
+              ].map((stat, i) => (
+                <div key={stat.label} className="group" data-testid={`stat-${stat.label.toLowerCase().replace(" ", "-")}`}>
+                  <p className="font-sans text-3xl md:text-4xl font-bold gradient-text">{stat.value}</p>
+                  <p className="text-sm text-muted-foreground font-mono mt-0.5">{stat.label}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-end justify-between gap-4 mb-8">
-            <div>
-              <h2 className="font-sans text-2xl md:text-3xl font-bold mb-2" data-testid="text-featured-title">
+          <div className="flex items-end justify-between gap-4 mb-10">
+            <div className="animate-fade-in-up">
+              <p className="text-primary font-mono text-sm font-medium mb-2 uppercase tracking-wider">Curated Selection</p>
+              <h2 className="font-sans text-2xl md:text-3xl lg:text-4xl font-bold" data-testid="text-featured-title">
                 Featured Properties
               </h2>
-              <p className="text-muted-foreground font-mono" data-testid="text-featured-subtitle">
-                Handpicked premium listings for you
+              <p className="text-muted-foreground font-mono mt-2 max-w-lg" data-testid="text-featured-subtitle">
+                Handpicked premium listings for discerning buyers
               </p>
             </div>
             <Link href="/properties">
-              <Button variant="ghost" className="gap-2 shrink-0" data-testid="button-view-all">
+              <Button variant="ghost" className="gap-2 shrink-0 group" data-testid="button-view-all">
                 View All
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Button>
             </Link>
           </div>
@@ -120,8 +127,10 @@ export default function Home() {
             </div>
           ) : featuredProperties && featuredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+              {featuredProperties.map((property, i) => (
+                <div key={property.id} className={`animate-fade-in-up stagger-${i + 1}`}>
+                  <PropertyCard property={property} />
+                </div>
               ))}
             </div>
           ) : (
@@ -137,13 +146,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-sans text-2xl md:text-3xl font-bold mb-2" data-testid="text-why-title">
+      <section className="py-20 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
+        <div className="max-w-7xl mx-auto relative">
+          <div className="text-center mb-14">
+            <p className="text-primary font-mono text-sm font-medium mb-2 uppercase tracking-wider animate-fade-in">Why Us</p>
+            <h2 className="font-sans text-2xl md:text-3xl lg:text-4xl font-bold mb-3 animate-fade-in-up" data-testid="text-why-title">
               Why Choose Tony Multi Ventures
             </h2>
-            <p className="text-muted-foreground font-mono max-w-xl mx-auto" data-testid="text-why-subtitle">
+            <p className="text-muted-foreground font-mono max-w-xl mx-auto animate-fade-in-up stagger-1" data-testid="text-why-subtitle">
               We deliver exceptional real estate experiences with integrity and expertise
             </p>
           </div>
@@ -171,13 +182,13 @@ export default function Home() {
                 desc: "Curated portfolio of premium properties in the best locations",
               },
             ].map((item, i) => (
-              <Card key={i} className="hover-elevate" data-testid={`card-feature-${i}`}>
+              <Card key={i} className={`group smooth-shadow border-0 animate-fade-in-up stagger-${i + 1}`} data-testid={`card-feature-${i}`}>
                 <CardContent className="p-6 text-center">
-                  <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5 transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-110">
                     <item.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="font-sans font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground font-mono">{item.desc}</p>
+                  <h3 className="font-sans font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground font-mono leading-relaxed">{item.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -185,40 +196,63 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="contact" className="py-16 px-4">
+      <section id="contact" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div>
-              <h2 className="font-sans text-2xl md:text-3xl font-bold mb-2" data-testid="text-contact-title">
-                Get In Touch
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div className="animate-slide-in-left">
+              <p className="text-primary font-mono text-sm font-medium mb-2 uppercase tracking-wider">Get In Touch</p>
+              <h2 className="font-sans text-2xl md:text-3xl lg:text-4xl font-bold mb-3" data-testid="text-contact-title">
+                Let's Talk Property
               </h2>
-              <p className="text-muted-foreground font-mono mb-6" data-testid="text-contact-subtitle">
-                Interested in a property? Leave your details and we'll reach out to you.
+              <p className="text-muted-foreground font-mono mb-8 leading-relaxed max-w-md" data-testid="text-contact-subtitle">
+                Interested in a property or need expert advice? Leave your details and our team will reach out to you within 24 hours.
               </p>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-semibold">Office Location</p>
-                    <p className="text-sm text-muted-foreground font-mono">Lagos, Nigeria</p>
+              <div className="space-y-5">
+                {[
+                  { icon: MapPin, title: "Office Location", desc: "Lagos, Nigeria" },
+                  { icon: Phone, title: "Phone", desc: "Available on WhatsApp" },
+                  { icon: Mail, title: "Email", desc: "info@tonymultiventures.com" },
+                ].map((item, i) => (
+                  <div key={item.title} className={`flex items-start gap-4 animate-fade-in-up stagger-${i + 1}`}>
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <item.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{item.title}</p>
+                      <p className="text-sm text-muted-foreground font-mono">{item.desc}</p>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
-            <LeadCaptureForm />
+            <div className="animate-slide-in-right">
+              <LeadCaptureForm />
+            </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t py-8 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            <span className="font-sans font-semibold">Tony Multi Ventures</span>
+      <footer className="border-t py-10 px-4 bg-muted/20">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-sans font-semibold">Tony Multi Ventures</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground font-mono">
+              <Link href="/properties" className="hover:text-foreground transition-colors">
+                Properties
+              </Link>
+              <a href="#contact" className="hover:text-foreground transition-colors">
+                Contact
+              </a>
+            </div>
+            <p className="text-sm text-muted-foreground font-mono" data-testid="text-copyright">
+              &copy; {new Date().getFullYear()} Tony Multi Ventures
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground font-mono" data-testid="text-copyright">
-            &copy; {new Date().getFullYear()} Tony Multi Ventures. All rights reserved.
-          </p>
         </div>
       </footer>
     </div>

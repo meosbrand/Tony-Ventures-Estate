@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from "lucide-react";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -107,42 +106,47 @@ export function ChatWidget() {
   return (
     <>
       {!isOpen && (
-        <Button
+        <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg"
-          size="icon"
+          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-xl active:scale-95 animate-scale-in"
           data-testid="button-open-chat"
         >
           <MessageCircle className="h-6 w-6" />
-        </Button>
+          <span className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-background animate-pulse-soft" />
+        </button>
       )}
 
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-4rem)] flex flex-col shadow-xl">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b bg-primary text-primary-foreground rounded-t-[inherit]">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
+        <Card className="fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-2rem)] h-[540px] max-h-[calc(100vh-4rem)] flex flex-col shadow-2xl overflow-hidden animate-scale-in border-0 smooth-shadow">
+          <div className="flex items-center justify-between gap-2 px-4 py-3.5 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm">
+                <Sparkles className="h-4 w-4" />
+              </div>
               <div>
                 <p className="font-semibold text-sm">Tony Multi Assistant</p>
-                <p className="text-xs opacity-80">Online</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse-soft" />
+                  <p className="text-xs opacity-80">AI-powered</p>
+                </div>
               </div>
             </div>
             <Button
               size="icon"
               variant="ghost"
               onClick={() => setIsOpen(false)}
-              className="text-primary-foreground no-default-hover-elevate no-default-active-elevate"
+              className="text-primary-foreground hover:bg-white/15 rounded-full no-default-hover-elevate no-default-active-elevate"
               data-testid="button-close-chat"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-background to-muted/20">
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex gap-2 animate-fade-in ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 data-testid={`chat-message-${i}`}
               >
                 {msg.role === "assistant" && (
@@ -151,30 +155,30 @@ export function ChatWidget() {
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap ${
+                  className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm whitespace-pre-wrap leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-muted rounded-bl-md"
                   }`}
                 >
                   {msg.content}
                 </div>
                 {msg.role === "user" && (
                   <div className="h-7 w-7 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-secondary" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                   </div>
                 )}
               </div>
             ))}
             {isLoading && messages[messages.length - 1]?.content === "" && (
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground animate-fade-in">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm">Thinking...</span>
               </div>
             )}
           </div>
 
-          <div className="p-3 border-t">
+          <div className="p-3 border-t bg-background/80 backdrop-blur-sm">
             <div className="flex items-end gap-2">
               <Textarea
                 ref={textareaRef}
@@ -182,7 +186,7 @@ export function ChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about properties..."
-                className="resize-none min-h-[40px] max-h-[100px] text-sm"
+                className="resize-none min-h-[40px] max-h-[100px] text-sm rounded-xl"
                 rows={1}
                 data-testid="input-chat-message"
               />
@@ -190,6 +194,7 @@ export function ChatWidget() {
                 size="icon"
                 onClick={sendMessage}
                 disabled={!input.trim() || isLoading}
+                className="rounded-full shrink-0 transition-transform duration-200 hover:scale-105 active:scale-95"
                 data-testid="button-send-chat"
               >
                 <Send className="h-4 w-4" />

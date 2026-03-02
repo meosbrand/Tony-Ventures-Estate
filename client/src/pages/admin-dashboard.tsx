@@ -47,6 +47,8 @@ import {
   MapPin,
   Upload,
   Image,
+  TrendingUp,
+  UserPlus,
 } from "lucide-react";
 import type { Property, Lead } from "@shared/schema";
 
@@ -362,7 +364,7 @@ function PropertyForm({
           <Button type="button" variant="ghost" onClick={onClose} data-testid="button-cancel-property">
             Cancel
           </Button>
-          <Button type="submit" disabled={mutation.isPending} data-testid="button-save-property">
+          <Button type="submit" disabled={mutation.isPending} className="transition-transform duration-200 active:scale-[0.98]" data-testid="button-save-property">
             {mutation.isPending ? "Saving..." : property ? "Update Property" : "Create Property"}
           </Button>
         </div>
@@ -418,7 +420,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   return (
     <div className="min-h-screen">
-      <div className="border-b bg-background sticky top-16 z-40">
+      <div className="border-b glass sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div>
             <h1 className="font-sans text-xl font-bold" data-testid="text-admin-title">
@@ -435,59 +437,68 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <Card data-testid="card-stat-total-props">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-sans text-2xl font-bold">{properties?.length || 0}</p>
-                <p className="text-sm text-muted-foreground font-mono">Properties</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card data-testid="card-stat-total-leads">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-sans text-2xl font-bold">{leads?.length || 0}</p>
-                <p className="text-sm text-muted-foreground font-mono">Leads</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card data-testid="card-stat-new-leads">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-sans text-2xl font-bold">
-                  {leads?.filter((l) => l.status === "new").length || 0}
-                </p>
-                <p className="text-sm text-muted-foreground font-mono">New Leads</p>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+          {[
+            {
+              icon: Building2,
+              value: properties?.length || 0,
+              label: "Total Properties",
+              testId: "card-stat-total-props",
+              color: "text-primary",
+              bg: "bg-primary/10",
+            },
+            {
+              icon: Users,
+              value: leads?.length || 0,
+              label: "Total Leads",
+              testId: "card-stat-total-leads",
+              color: "text-chart-2",
+              bg: "bg-chart-2/10",
+            },
+            {
+              icon: UserPlus,
+              value: leads?.filter((l) => l.status === "new").length || 0,
+              label: "New Leads",
+              testId: "card-stat-new-leads",
+              color: "text-chart-3",
+              bg: "bg-chart-3/10",
+            },
+          ].map((stat, i) => (
+            <Card key={stat.testId} className={`border-0 smooth-shadow animate-fade-in-up stagger-${i + 1}`} data-testid={stat.testId}>
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className={`h-12 w-12 rounded-xl ${stat.bg} flex items-center justify-center`}>
+                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                </div>
+                <div>
+                  <p className="font-sans text-2xl font-bold">{stat.value}</p>
+                  <p className="text-sm text-muted-foreground font-mono">{stat.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <Tabs defaultValue="properties">
-          <TabsList className="mb-4" data-testid="tabs-admin">
-            <TabsTrigger value="properties" data-testid="tab-properties">Properties</TabsTrigger>
-            <TabsTrigger value="leads" data-testid="tab-leads">Leads</TabsTrigger>
+          <TabsList className="mb-6 bg-muted/40 p-1" data-testid="tabs-admin">
+            <TabsTrigger value="properties" className="gap-2" data-testid="tab-properties">
+              <Building2 className="h-4 w-4" />
+              Properties
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="gap-2" data-testid="tab-leads">
+              <Users className="h-4 w-4" />
+              Leads
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="properties">
-            <div className="flex items-center justify-between gap-4 mb-4">
+          <TabsContent value="properties" className="animate-fade-in">
+            <div className="flex items-center justify-between gap-4 mb-6">
               <h2 className="font-sans text-lg font-semibold" data-testid="text-manage-properties">
                 Manage Properties
               </h2>
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2" data-testid="button-add-property">
+                  <Button className="gap-2 transition-transform duration-200 active:scale-[0.98]" data-testid="button-add-property">
                     <Plus className="h-4 w-4" />
                     Add Property
                   </Button>
@@ -504,21 +515,25 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             {propsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full" />
+                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
                 ))}
               </div>
             ) : properties && properties.length > 0 ? (
               <div className="space-y-3">
-                {properties.map((property) => (
-                  <Card key={property.id} data-testid={`admin-property-${property.id}`}>
+                {properties.map((property, i) => (
+                  <Card key={property.id} className={`border-0 smooth-shadow animate-fade-in-up stagger-${Math.min(i + 1, 5)}`} data-testid={`admin-property-${property.id}`}>
                     <CardContent className="p-4 flex items-center gap-4">
-                      <div className="h-16 w-20 rounded-md bg-muted shrink-0">
-                        {property.imageUrl && (
+                      <div className="h-16 w-20 rounded-xl bg-muted shrink-0 overflow-hidden img-zoom">
+                        {property.imageUrl ? (
                           <img
                             src={property.imageUrl}
                             alt={property.name}
-                            className="h-full w-full object-cover rounded-md"
+                            className="h-full w-full object-cover"
                           />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <Building2 className="h-6 w-6 text-muted-foreground/40" />
+                          </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -527,10 +542,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           <Badge variant="secondary">{property.propertyType}</Badge>
                           {property.featured && <Badge>Featured</Badge>}
                         </div>
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
-                          <MapPin className="h-3 w-3" />
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3 text-primary/50" />
                           <span className="font-mono truncate">{property.location}</span>
-                          <span className="font-mono ml-2 font-semibold">
+                          <span className="font-mono ml-2 font-semibold text-foreground">
                             ${Number(property.price).toLocaleString()}
                           </span>
                         </div>
@@ -541,6 +556,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                             <Button
                               size="icon"
                               variant="ghost"
+                              className="rounded-full"
                               onClick={() => setEditProperty(property)}
                               data-testid={`button-edit-${property.id}`}
                             >
@@ -560,6 +576,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                         <Button
                           size="icon"
                           variant="ghost"
+                          className="rounded-full text-destructive/70 hover:text-destructive"
                           onClick={() => {
                             if (confirm("Are you sure you want to delete this property?")) {
                               deleteProperty.mutate(property.id);
@@ -575,30 +592,32 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <Card className="border-0 smooth-shadow">
+                <CardContent className="py-16 text-center">
+                  <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                  </div>
                   <p className="text-muted-foreground font-mono">No properties yet. Add your first one!</p>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          <TabsContent value="leads">
-            <h2 className="font-sans text-lg font-semibold mb-4" data-testid="text-manage-leads">
+          <TabsContent value="leads" className="animate-fade-in">
+            <h2 className="font-sans text-lg font-semibold mb-6" data-testid="text-manage-leads">
               Manage Leads
             </h2>
 
             {leadsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full" />
+                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
                 ))}
               </div>
             ) : leads && leads.length > 0 ? (
               <div className="space-y-3">
-                {leads.map((lead) => (
-                  <Card key={lead.id} data-testid={`admin-lead-${lead.id}`}>
+                {leads.map((lead, i) => (
+                  <Card key={lead.id} className={`border-0 smooth-shadow animate-fade-in-up stagger-${Math.min(i + 1, 5)}`} data-testid={`admin-lead-${lead.id}`}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -616,15 +635,15 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                               {lead.status}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground font-mono mt-0.5">
+                          <p className="text-sm text-muted-foreground font-mono mt-1">
                             {lead.email} {lead.phone && `| ${lead.phone}`}
                           </p>
                           {lead.message && (
-                            <p className="text-sm mt-2 text-muted-foreground line-clamp-2">
+                            <p className="text-sm mt-2 text-muted-foreground line-clamp-2 bg-muted/30 rounded-lg px-3 py-2">
                               {lead.message}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1 font-mono">
+                          <p className="text-xs text-muted-foreground mt-2 font-mono">
                             {new Date(lead.createdAt).toLocaleDateString()} | Source: {lead.source}
                           </p>
                         </div>
@@ -648,6 +667,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="rounded-full text-destructive/70 hover:text-destructive"
                             onClick={() => {
                               if (confirm("Are you sure you want to delete this lead?")) {
                                 deleteLead.mutate(lead.id);
@@ -664,9 +684,11 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <Card className="border-0 smooth-shadow">
+                <CardContent className="py-16 text-center">
+                  <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                    <Users className="h-8 w-8 text-muted-foreground" />
+                  </div>
                   <p className="text-muted-foreground font-mono">No leads yet. They'll appear here when visitors inquire.</p>
                 </CardContent>
               </Card>

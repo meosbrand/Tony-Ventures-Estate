@@ -11,13 +11,26 @@ A real estate web application for Tony Multi Ventures where administrators can m
 - **Routing**: wouter (frontend), Express (backend)
 
 ## Key Features
-- Property browsing with card-based grid layout
-- Property detail pages with full descriptions
+- Property browsing with card-based grid layout and type filter pills
+- Property detail pages with full descriptions and stat cards
 - WhatsApp inquiry CTAs with pre-filled messages
-- AI chatbot trained on property listings
+- AI chatbot (SSE streaming) trained on property listings
 - Lead capture system for visitor inquiries
-- Admin dashboard for property & lead management
+- Admin dashboard for property & lead management (session-based auth)
 - Dual theme support (light/dark mode)
+
+## Modern Design System
+- Glassmorphism navbar with backdrop-blur and scroll-aware transparency
+- Pill-style navigation tabs and property type filters
+- Gradient text effects on hero headings and stats
+- Smooth entrance animations (fade-in-up, slide-in, scale-in) with staggered delays
+- Card hover effects: smooth-shadow elevation, card-shine sweep, img-zoom on images
+- Gradient overlays on hero images and property card hovers
+- Subtle pulsing gradient blobs as background decoration
+- Rounded icon containers (rounded-xl/2xl) for feature and stat icons
+- Dashed border separators for visual rhythm
+- Micro-interactions on buttons (scale on hover/active)
+- Chat widget with gradient header, rounded message bubbles, online indicator
 
 ## Project Structure
 ```
