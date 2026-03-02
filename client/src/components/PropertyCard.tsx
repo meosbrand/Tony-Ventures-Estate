@@ -41,7 +41,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent rounded-t-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          <Badge variant="secondary" className="backdrop-blur-sm bg-background/80" data-testid={`badge-type-${property.id}`}>
+          <Badge variant="secondary" className="backdrop-blur-sm bg-background/80 text-[#6e5222]" data-testid={`badge-type-${property.id}`}>
             {property.propertyType}
           </Badge>
           {property.featured && (
