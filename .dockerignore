@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.local
+.cache
+.config
+*.log
+.replit
+replit.nix
+replit.md
+.env
+attached_assets
+tmp

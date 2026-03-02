@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tony
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: tonymulti
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tony -d tonymulti"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://tony:changeme@db:5432/tonymulti
+      SESSION_SECRET: change-this-to-a-long-random-string
+      PORT: "5000"
+      NODE_ENV: production
+      # Add your OpenAI API key for the AI chatbot
+      # AI_INTEGRATIONS_OPENAI_API_KEY: your-openai-api-key
+      # AI_INTEGRATIONS_OPENAI_BASE_URL: https://api.openai.com/v1
+
+volumes:
+  pgdata:
