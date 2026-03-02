@@ -50,7 +50,8 @@ import {
   TrendingUp,
   UserPlus,
 } from "lucide-react";
-import type { Property, Lead } from "@shared/schema";
+import type { Property, Lead, User } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 
 const propertyFormSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -70,8 +71,7 @@ const propertyFormSchema = z.object({
 type PropertyFormValues = z.infer<typeof propertyFormSchema>;
 
 interface AdminDashboardProps {
-  user: { id: string; username: string };
-  onLogout: () => void;
+  user: User;
 }
 
 function PropertyForm({
@@ -373,7 +373,8 @@ function PropertyForm({
   );
 }
 
-export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
+export default function AdminDashboard({ user }: AdminDashboardProps) {
+  const { logout, isLoggingOut } = useAuth();
   const [editProperty, setEditProperty] = useState<Property | undefined>();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
@@ -427,12 +428,12 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
               Admin Dashboard
             </h1>
             <p className="text-sm text-muted-foreground font-mono" data-testid="text-admin-user">
-              Welcome, {user.username}
+              Welcome, {user.firstName || user.email || "Admin"}
             </p>
           </div>
-          <Button variant="ghost" onClick={onLogout} className="gap-2" data-testid="button-logout">
+          <Button variant="ghost" onClick={() => logout()} disabled={isLoggingOut} className="gap-2" data-testid="button-logout">
             <LogOut className="h-4 w-4" />
-            Logout
+            {isLoggingOut ? "Logging out..." : "Logout"}
           </Button>
         </div>
       </div>

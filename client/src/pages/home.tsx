@@ -33,7 +33,7 @@ export default function Home() {
         <div className="absolute bottom-10 left-[5%] w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse-soft" style={{ animationDelay: "1.5s" }} />
 
         <div className="max-w-7xl mx-auto relative">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl mx-auto text-center">
             <div className="animate-fade-in-up">
               <Badge variant="secondary" className="mb-5 gap-1.5 px-3 py-1" data-testid="badge-hero-tag">
                 <Sparkles className="h-3 w-3" />
@@ -45,19 +45,19 @@ export default function Home() {
               data-testid="text-hero-title"
             >
               Find Your Dream{" "}
-              <span className="gradient-text">Property</span>
+              <span className="text-primary">Property</span>
               <br className="hidden sm:block" />
               {" "}With Tony Multi Ventures
             </h1>
             <p
-              className="animate-fade-in-up stagger-2 font-mono text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl leading-relaxed"
+              className="animate-fade-in-up stagger-2 font-mono text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
               data-testid="text-hero-subtitle"
             >
               Discover premium properties across Nigeria's most sought-after
               locations. From luxury villas to modern apartments, we bring your
               vision home.
             </p>
-            <div className="animate-fade-in-up stagger-3 flex flex-wrap items-center gap-3">
+            <div className="animate-fade-in-up stagger-3 flex flex-wrap items-center justify-center gap-3">
               <Link href="/properties">
                 <Button size="lg" className="gap-2 px-6 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" data-testid="button-browse-properties">
                   Browse Properties
@@ -71,14 +71,14 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="animate-fade-in-up stagger-4 flex flex-wrap items-center gap-8 mt-14 pt-8 border-t border-dashed">
+            <div className="animate-fade-in-up stagger-4 flex flex-wrap items-center justify-center gap-8 mt-14 pt-8 border-t border-dashed">
               {[
                 { value: `${allProperties?.length || 0}+`, label: "Properties" },
                 { value: "200+", label: "Happy Clients" },
                 { value: "10+", label: "Years Experience" },
               ].map((stat, i) => (
                 <div key={stat.label} className="group" data-testid={`stat-${stat.label.toLowerCase().replace(" ", "-")}`}>
-                  <p className="font-sans text-3xl md:text-4xl font-bold gradient-text">{stat.value}</p>
+                  <p className="font-sans text-3xl md:text-4xl font-bold text-primary">{stat.value}</p>
                   <p className="text-sm text-muted-foreground font-mono mt-0.5">{stat.label}</p>
                 </div>
               ))}

@@ -1,18 +1,9 @@
 import { db } from "./db";
-import { properties, users } from "@shared/schema";
-import { sql } from "drizzle-orm";
+import { properties } from "@shared/schema";
 
 export async function seedDatabase() {
   const existingProperties = await db.select().from(properties);
   if (existingProperties.length > 0) return;
-
-  const existingUsers = await db.select().from(users);
-  if (existingUsers.length === 0) {
-    await db.insert(users).values({
-      username: "admin",
-      password: "admin123",
-    });
-  }
 
   await db.insert(properties).values([
     {
