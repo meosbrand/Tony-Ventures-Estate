@@ -1,7 +1,18 @@
 import { db } from "./db";
-import { properties } from "@shared/schema";
+import { properties, users } from "@shared/schema";
+import bcrypt from "bcrypt";
 
 export async function seedDatabase() {
+  const existingUsers = await db.select().from(users);
+  if (existingUsers.length === 0) {
+    const hashedPassword = await bcrypt.hash("admin01", 12);
+    await db.insert(users).values({
+      username: "Admin",
+      password: hashedPassword,
+    });
+    console.log("Admin user seeded successfully");
+  }
+
   const existingProperties = await db.select().from(properties);
   if (existingProperties.length > 0) return;
 

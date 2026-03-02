@@ -1,10 +1,12 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { insertPropertySchema, insertLeadSchema } from "@shared/schema";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -12,12 +14,47 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+declare module "express-session" {
+  interface SessionData {
+    adminId?: string;
+    adminUsername?: string;
+  }
+}
+
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.adminId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  next();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  const PgStore = connectPg(session);
+  const sessionStore = new PgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+    tableName: "admin_sessions",
+  });
+
+  app.set("trust proxy", 1);
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET!,
+      store: sessionStore,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000,
+      },
+    })
+  );
+
   registerChatRoutes(app);
   registerObjectStorageRoutes(app);
 
@@ -50,7 +87,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/properties", isAuthenticated, async (req, res) => {
+  app.post("/api/properties", requireAdmin, async (req, res) => {
     try {
       const parsed = insertPropertySchema.parse(req.body);
       const property = await storage.createProperty(parsed);
@@ -60,7 +97,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/properties/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/properties/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const partialSchema = insertPropertySchema.partial();
@@ -73,7 +110,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/properties/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/properties/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteProperty(id);
@@ -83,7 +120,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/leads", isAuthenticated, async (req, res) => {
+  app.get("/api/leads", requireAdmin, async (req, res) => {
     try {
       const allLeads = await storage.getLeads();
       res.json(allLeads);
@@ -102,7 +139,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/leads/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/leads/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { status } = req.body;
@@ -117,13 +154,50 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/leads/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/leads/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteLead(id);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete lead" });
+    }
+  });
+
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      req.session.adminId = user.id;
+      req.session.adminUsername = user.username;
+      res.json({ id: user.id, username: user.username });
+    } catch (error) {
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/admin/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) return res.status(500).json({ error: "Logout failed" });
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/admin/session", (req, res) => {
+    if (req.session.adminId) {
+      res.json({ id: req.session.adminId, username: req.session.adminUsername });
+    } else {
+      res.status(401).json({ error: "Not authenticated" });
     }
   });
 
