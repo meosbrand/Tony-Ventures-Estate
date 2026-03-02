@@ -420,7 +420,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   return (
     <div className="min-h-screen">
-      <div className="border-b glass sticky top-16 z-40">
+      <div className="border-b glass sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div>
             <h1 className="font-sans text-xl font-bold" data-testid="text-admin-title">

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Menu, X, Home, Building2, ChevronRight } from "lucide-react";
+import { Sun, Moon, Menu, X, Home, Building2, Mail } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useState, useEffect } from "react";
 
@@ -48,12 +48,12 @@ export function Navbar() {
             {[
               { href: "/", label: "Home" },
               { href: "/properties", label: "Properties" },
-              { href: "/admin", label: "Admin" },
+              { href: "/contact", label: "Contact" },
             ].map((link) => (
               <Link key={link.href} href={link.href}>
                 <button
                   className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                    isActive(link.href) || (link.href === "/admin" && location.startsWith("/admin"))
+                    isActive(link.href)
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
@@ -102,7 +102,7 @@ export function Navbar() {
             {[
               { href: "/", label: "Home", icon: Home },
               { href: "/properties", label: "Properties", icon: Building2 },
-              { href: "/admin", label: "Admin", icon: ChevronRight },
+              { href: "/contact", label: "Contact", icon: Mail },
             ].map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
                 <Button

@@ -5,18 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PropertyCard } from "@/components/PropertyCard";
-import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 import {
   ArrowRight,
   Building2,
   Shield,
   TrendingUp,
   Users,
-  MapPin,
   Star,
   Sparkles,
-  Phone,
-  Mail,
 } from "lucide-react";
 import type { Property } from "@shared/schema";
 
@@ -68,11 +64,11 @@ export default function Home() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <a href="#contact">
+              <Link href="/contact">
                 <Button size="lg" variant="secondary" className="px-6 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" data-testid="button-contact-us">
                   Contact Us
                 </Button>
-              </a>
+              </Link>
             </div>
 
             <div className="animate-fade-in-up stagger-4 flex flex-wrap items-center gap-8 mt-14 pt-8 border-t border-dashed">
@@ -196,39 +192,21 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="contact" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            <div className="animate-slide-in-left">
-              <p className="text-primary font-mono text-sm font-medium mb-2 uppercase tracking-wider">Get In Touch</p>
-              <h2 className="font-sans text-2xl md:text-3xl lg:text-4xl font-bold mb-3" data-testid="text-contact-title">
-                Let's Talk Property
-              </h2>
-              <p className="text-muted-foreground font-mono mb-8 leading-relaxed max-w-md" data-testid="text-contact-subtitle">
-                Interested in a property or need expert advice? Leave your details and our team will reach out to you within 24 hours.
-              </p>
-              <div className="space-y-5">
-                {[
-                  { icon: MapPin, title: "Office Location", desc: "Lagos, Nigeria" },
-                  { icon: Phone, title: "Phone", desc: "Available on WhatsApp" },
-                  { icon: Mail, title: "Email", desc: "info@tonymultiventures.com" },
-                ].map((item, i) => (
-                  <div key={item.title} className={`flex items-start gap-4 animate-fade-in-up stagger-${i + 1}`}>
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <item.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">{item.title}</p>
-                      <p className="text-sm text-muted-foreground font-mono">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="animate-slide-in-right">
-              <LeadCaptureForm />
-            </div>
-          </div>
+      <section className="py-20 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+        <div className="max-w-3xl mx-auto text-center relative animate-fade-in-up">
+          <h2 className="font-sans text-2xl md:text-3xl lg:text-4xl font-bold mb-4" data-testid="text-cta-title">
+            Ready to Find Your Dream Property?
+          </h2>
+          <p className="text-muted-foreground font-mono mb-8 max-w-xl mx-auto leading-relaxed">
+            Get in touch with our team today. We'll help you find the perfect property that matches your needs and budget.
+          </p>
+          <Link href="/contact">
+            <Button size="lg" className="gap-2 px-8 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]" data-testid="button-cta-contact">
+              Contact Us
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </section>
 
@@ -245,9 +223,9 @@ export default function Home() {
               <Link href="/properties" className="hover:text-foreground transition-colors">
                 Properties
               </Link>
-              <a href="#contact" className="hover:text-foreground transition-colors">
+              <Link href="/contact" className="hover:text-foreground transition-colors">
                 Contact
-              </a>
+              </Link>
             </div>
             <p className="text-sm text-muted-foreground font-mono" data-testid="text-copyright">
               &copy; {new Date().getFullYear()} Tony Multi Ventures
