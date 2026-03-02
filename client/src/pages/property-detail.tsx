@@ -21,9 +21,9 @@ import type { Property } from "@shared/schema";
 
 function formatPrice(price: string | number) {
   const num = typeof price === "string" ? parseFloat(price) : price;
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency: "USD",
+    currency: "NGN",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(num);

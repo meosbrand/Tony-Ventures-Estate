@@ -180,7 +180,7 @@ function PropertyForm({
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price (USD)</FormLabel>
+                <FormLabel>Price (₦)</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="450000" {...field} data-testid="input-property-price" />
                 </FormControl>
@@ -546,7 +546,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           <MapPin className="h-3 w-3 text-primary/50" />
                           <span className="font-mono truncate">{property.location}</span>
                           <span className="font-mono ml-2 font-semibold text-foreground">
-                            ${Number(property.price).toLocaleString()}
+                            ₦{Number(property.price).toLocaleString()}
                           </span>
                         </div>
                       </div>
