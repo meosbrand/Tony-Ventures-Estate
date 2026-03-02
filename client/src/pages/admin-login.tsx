@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, Lock } from "lucide-react";
+import { LogIn, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 const loginSchema = z.object({
@@ -28,6 +29,8 @@ interface AdminLoginProps {
 
 export default function AdminLogin({ onLogin }: AdminLoginProps) {
   const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -40,15 +43,12 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
       return res.json();
     },
     onSuccess: (user) => {
+      setLoginError("");
       onLogin(user);
       toast({ title: "Welcome back!", description: `Logged in as ${user.username}` });
     },
     onError: () => {
-      toast({
-        title: "Login Failed",
-        description: "Invalid username or password.",
-        variant: "destructive",
-      });
+      setLoginError("Invalid username or password. Please try again.");
     },
   });
 
@@ -74,8 +74,15 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
               </p>
             </div>
 
+            {loginError && (
+              <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-mono" data-testid="text-login-error">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{loginError}</span>
+              </div>
+            )}
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
+              <form onSubmit={form.handleSubmit((data) => { setLoginError(""); mutation.mutate(data); })} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="username"
@@ -96,7 +103,30 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Enter password" className="bg-background/60" {...field} data-testid="input-admin-password" />
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter password"
+                            className="bg-background/60 pr-10"
+                            {...field}
+                            data-testid="input-admin-password"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                            tabIndex={-1}
+                            data-testid="button-toggle-password"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
