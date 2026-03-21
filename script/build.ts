@@ -6,7 +6,9 @@ import { rm, readFile } from "fs/promises";
 // which helps cold start times
 const allowlist = [
   "@google/generative-ai",
+  "@supabase/supabase-js",
   "axios",
+  "bcrypt",
   "connect-pg-simple",
   "cors",
   "date-fns",

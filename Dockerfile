@@ -21,11 +21,12 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm rebuild bcrypt && \
     apt-get purge -y python3 make g++ && apt-get autoremove -y
 
+RUN npx drizzle-kit --help > /dev/null 2>&1 || npm install drizzle-kit
+
 COPY --from=builder /app/dist ./dist
 
 COPY drizzle.config.ts ./
 COPY shared ./shared
-COPY public ./public
 
 ENV NODE_ENV=production
 ENV PORT=5000

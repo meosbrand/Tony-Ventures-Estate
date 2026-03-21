@@ -3,16 +3,11 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcrypt";
+import multer from "multer";
 import { storage } from "./storage";
 import { insertPropertySchema, insertLeadSchema } from "@shared/schema";
-import { registerChatRoutes } from "./replit_integrations/chat";
-import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+import { streamChatResponse } from "./ai-provider";
+import { isSupabaseConfigured, uploadFile as supabaseUpload, ensureBucket } from "./supabase-storage";
 
 declare module "express-session" {
   interface SessionData {
@@ -55,8 +50,41 @@ export async function registerRoutes(
     })
   );
 
-  registerChatRoutes(app);
-  registerObjectStorageRoutes(app);
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+  if (isSupabaseConfigured()) {
+    ensureBucket().catch(console.error);
+  }
+
+  try {
+    const { registerChatRoutes } = await import("./replit_integrations/chat");
+    registerChatRoutes(app);
+  } catch (e) {
+    console.log("Replit chat integration not available (expected outside Replit)");
+  }
+
+  if (isSupabaseConfigured()) {
+    app.post("/api/uploads/upload", requireAdmin, upload.single("file"), async (req, res) => {
+      try {
+        if (!req.file) return res.status(400).json({ error: "No file provided" });
+        const publicUrl = await supabaseUpload(req.file.buffer, req.file.originalname, req.file.mimetype);
+        res.json({ url: publicUrl, objectPath: publicUrl });
+      } catch (error: any) {
+        console.error("Upload error:", error);
+        res.status(500).json({ error: error.message || "Upload failed" });
+      }
+    });
+  } else {
+    try {
+      const { registerObjectStorageRoutes } = await import("./replit_integrations/object_storage");
+      registerObjectStorageRoutes(app);
+    } catch (e) {
+      console.log("Replit object storage not available. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for image uploads.");
+      app.post("/api/uploads/request-url", (_req, res) => {
+        res.status(503).json({ error: "No storage configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." });
+      });
+    }
+  }
 
   app.get("/api/properties", async (req, res) => {
     try {
@@ -241,34 +269,7 @@ Rules:
 - If you don't know something specific, be honest but redirect to something you can help with
 - Keep responses concise but impactful — every sentence should add value or move the conversation forward`;
 
-      const messages: any[] = [
-        { role: "system", content: systemPrompt },
-        ...conversationHistory.map((m: any) => ({ role: m.role, content: m.content })),
-        { role: "user", content: message },
-      ];
-
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-
-      const stream = await openai.chat.completions.create({
-        model: "gpt-5.2",
-        messages,
-        stream: true,
-        max_completion_tokens: 8192,
-      });
-
-      let fullResponse = "";
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          fullResponse += content;
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
-        }
-      }
-
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
+      await streamChatResponse(systemPrompt, conversationHistory, message, res);
     } catch (error) {
       console.error("Chatbot error:", error);
       if (res.headersSent) {
