@@ -13,13 +13,8 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ && \
-    rm -rf /var/lib/apt/lists/*
-
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm rebuild bcrypt && \
-    apt-get purge -y python3 make g++ && apt-get autoremove -y
+RUN npm ci --omit=dev
 
 RUN npx drizzle-kit --help > /dev/null 2>&1 || npm install drizzle-kit
 

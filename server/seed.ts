@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { properties, users } from "@shared/schema";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function seedDatabase() {
   const existingUsers = await db.select().from(users);
