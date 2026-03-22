@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from "lucide-react";
+import { VoiceChatButton } from "./VoiceChatButton";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -95,6 +96,38 @@ export function ChatWidget() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVoiceMessageStart = () => {
+    // Optionally nothing needed here since onTranscript adds the user message
+  };
+
+  const handleVoiceTranscript = (text: string) => {
+    setMessages((prev) => [...prev, { role: "user", content: text }, { role: "assistant", content: "" }]);
+    setIsLoading(true);
+  };
+
+  const handleVoiceResponse = (text: string) => {
+    setIsLoading(false);
+    setMessages((prev) => {
+      const updated = [...prev];
+      updated[updated.length - 1] = {
+        role: "assistant",
+        content: text,
+      };
+      return updated;
+    });
+  };
+
+  const handleVoiceError = (error: string) => {
+    setIsLoading(false);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: `Error: ${error}`,
+      },
+    ]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -205,6 +238,12 @@ export function ChatWidget() {
                 className="resize-none min-h-[40px] max-h-[100px] text-sm rounded-xl"
                 rows={1}
                 data-testid="input-chat-message"
+              />
+              <VoiceChatButton 
+                onMessageStart={handleVoiceMessageStart}
+                onTranscript={handleVoiceTranscript}
+                onResponse={handleVoiceResponse}
+                onError={handleVoiceError}
               />
               <Button
                 size="icon"

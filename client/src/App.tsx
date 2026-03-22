@@ -30,8 +30,22 @@ function AppContent() {
   const [location] = useLocation();
   const isAdmin = location.startsWith("/admin");
 
+  const globalSchema = {
+    "@context": "https://schema.org",
+    "@type": ["Organization", "RealEstateAgent"],
+    "name": "Tony Multi Ventures",
+    "url": "https://tonymultiventures.com",
+    "logo": "https://tonymultiventures.com/logo.png",
+    "description": "Premium real estate agency in Nigeria offering luxury properties, villas, and apartments.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "NG"
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {!isAdmin && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(globalSchema) }} />}
       {!isAdmin && <Navbar />}
       <Router />
       {!isAdmin && <ChatWidget />}

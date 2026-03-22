@@ -1,9 +1,11 @@
 # Tony Multi Ventures - Real Estate Web Application
 
 ## Overview
+
 A real estate web application for Tony Multi Ventures where administrators can manage property listings and visitors can browse properties, view details, and inquire via WhatsApp with pre-filled messages. Includes an AI chatbot for visitor assistance and a lead capture system.
 
 ## Architecture
+
 - **Frontend**: React + Vite + Tailwind CSS + Shadcn UI
 - **Backend**: Express.js + PostgreSQL (Drizzle ORM)
 - **AI**: OpenAI or Google Gemini (configurable via AI_PROVIDER env var)
@@ -12,6 +14,7 @@ A real estate web application for Tony Multi Ventures where administrators can m
 - **Routing**: wouter (frontend), Express (backend)
 
 ## Key Features
+
 - Property browsing with card-based grid layout and type filter pills
 - Property detail pages with full descriptions and stat cards
 - WhatsApp inquiry CTAs with pre-filled messages
@@ -22,6 +25,7 @@ A real estate web application for Tony Multi Ventures where administrators can m
 - Deployable via Docker to Render, Railway, or any VPS
 
 ## Modern Design System
+
 - Glassmorphism navbar with backdrop-blur and scroll-aware transparency
 - Pill-style navigation tabs and property type filters
 - Solid primary color highlight on hero "Property" text
@@ -36,6 +40,7 @@ A real estate web application for Tony Multi Ventures where administrators can m
 - Chat widget with gradient header, rounded message bubbles, online indicator
 
 ## Authentication
+
 - Custom session-based auth with bcrypt-hashed passwords stored in PostgreSQL
 - Admin credentials stored in `admin_users` table (never hardcoded)
 - Default credentials: username "Admin", password "admin01" (seeded on first run)
@@ -45,6 +50,7 @@ A real estate web application for Tony Multi Ventures where administrators can m
 - Routes: `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/session`
 
 ## AI Chatbot
+
 - Configurable via `AI_PROVIDER` env var: `openai` (default) or `gemini`
 - OpenAI: uses `OPENAI_API_KEY` (or `AI_INTEGRATIONS_OPENAI_API_KEY` on Replit), model configurable via `OPENAI_MODEL`
 - Gemini: uses `GEMINI_API_KEY`, model configurable via `GEMINI_MODEL`
@@ -53,13 +59,15 @@ A real estate web application for Tony Multi Ventures where administrators can m
 - Personality: persuasive salesman "Tony" with warm conversational tone
 
 ## Image Storage
+
 - **Supabase Storage** (primary): uses `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, auto-creates bucket
 - **Replit Object Storage** (fallback): used when Supabase vars not set and running on Replit
 - Upload route: `POST /api/uploads/upload` (Supabase) or `POST /api/uploads/request-url` (Replit)
 - Supabase storage service in `server/supabase-storage.ts`
 
 ## Project Structure
-```
+
+```text
 client/src/
   pages/          - Page components (home, properties, property-detail, contact, admin, admin-login, admin-dashboard)
   components/     - Reusable components (Navbar, PropertyCard, ChatWidget, LeadCaptureForm)
@@ -73,7 +81,7 @@ server/
   storage.ts      - Database storage interface (DatabaseStorage)
   seed.ts         - Seed data for properties + admin user (bcrypt hashed)
   db.ts           - Database connection
-  replit_integrations/
+  voice-integrations/
     chat/         - AI chat integration (Replit-specific)
     object_storage/ - File upload/storage (Replit-specific, fallback)
 
@@ -84,6 +92,7 @@ shared/
 ```
 
 ## Database Tables
+
 - `admin_users` - Admin accounts (varchar id with UUID default, username, bcrypt-hashed password)
 - `properties` - Property listings (serial ID, name, location, price, description, images, etc.)
 - `leads` - Lead captures (serial ID, name, email, phone, message, propertyId, status)
@@ -91,6 +100,7 @@ shared/
 - `messages` - Chat messages (serial ID, conversationId, role, content)
 
 ## Environment Variables
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `SESSION_SECRET` - Session encryption secret
 - `AI_PROVIDER` - `openai` or `gemini` (default: openai)
@@ -103,6 +113,7 @@ shared/
 - `SUPABASE_STORAGE_BUCKET` - Storage bucket name (default: property-images)
 
 ## Deployment Files
+
 - `Dockerfile` - Multi-stage Docker build (builder + runner)
 - `docker-compose.yml` - Docker Compose with PostgreSQL
 - `render.yaml` - Render deployment blueprint
@@ -111,5 +122,6 @@ shared/
 - `.gitignore` - Git ignore rules
 
 ## Theme
+
 - Light: Warm gold (#F4CE89) primary, cream background, Lora/Space Grotesk/Geist fonts
 - Dark: Bright blue (#3BA0D8) primary, black background, Open Sans/Menlo fonts

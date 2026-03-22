@@ -1,7 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+
+if (process.env.NODE_ENV !== "production") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
+// Fail-fast: SESSION_SECRET must be set in production
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  console.error(
+    "FATAL: SESSION_SECRET environment variable is not set. Refusing to start in production."
+  );
+  process.exit(1);
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,12 +25,47 @@ declare module "http" {
   }
 }
 
+// Security headers (helmet)
+app.use(
+  helmet({
+    // Allow inline styles needed by Tailwind/Shadcn in dev
+    contentSecurityPolicy: process.env.NODE_ENV === "production",
+  })
+);
+
+// Cross-Origin Resource Sharing (CORS) - Support Split Architecture (Vercel Frontend -> Render Backend)
+app.use((req, res, next) => {
+  const allowedOrigins = process.env.CLIENT_URL 
+    ? process.env.CLIENT_URL.split(',') 
+    : ['https://tonymultiventures.vercel.app'];
+  
+  const origin = req.headers.origin;
+  
+  // In development, allow all. In production, securely match the allowed Vercel origins.
+  if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+    res.header("Access-Control-Allow-Origin", origin || "*");
+  } else if (origin && allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  } else {
+    res.header("Access-Control-Allow-Origin", allowedOrigins[0]);
+  }
+  
+  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(
   express.json({
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
-  }),
+  })
 );
 
 app.use(express.urlencoded({ extended: false }));
@@ -68,6 +116,7 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    // Only log full error details server-side; never expose stack traces to clients
     console.error("Internal Server Error:", err);
 
     if (res.headersSent) {
@@ -77,9 +126,7 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Set up vite in development only — after all other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -87,10 +134,6 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
     {
@@ -100,6 +143,6 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
-    },
+    }
   );
 })();

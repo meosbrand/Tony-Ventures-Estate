@@ -30,8 +30,8 @@ export function Navbar() {
         <div className="flex items-center justify-between gap-4 h-16">
           <Link href="/" data-testid="link-home">
             <div className="flex items-center gap-2.5 cursor-pointer group">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-105">
-                <Building2 className="h-5 w-5 text-primary" />
+              <div className="h-9 w-9 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 group-hover:scale-105">
+                <img src="/logo.png" alt="Tony Multi Ventures Logo" className="h-full w-full object-cover" />
               </div>
               <div className="flex flex-col">
                 <span className="font-sans text-lg font-bold leading-tight tracking-tight">

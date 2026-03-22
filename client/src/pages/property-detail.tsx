@@ -96,9 +96,67 @@ export default function PropertyDetail() {
     { icon: Building2, value: property.propertyType, label: "Type", testId: "card-stat-type" },
   ].filter(Boolean) as { icon: any; value: any; label: string; testId: string }[];
 
+  const schema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": property.propertyType.toLowerCase().includes("apartment") ? "Apartment" : "SingleFamilyResidence",
+        "name": property.name,
+        "description": property.shortDescription || property.description,
+        "image": property.imageUrl || "https://tonymultiventures.com/logo.png",
+        "numberOfRooms": property.bedrooms,
+        "floorSize": {
+          "@type": "QuantitativeValue",
+          "value": property.area,
+          "unitCode": "SQF"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": property.location,
+          "addressCountry": "NG"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": property.price,
+          "priceCurrency": "NGN",
+          "availability": "https://schema.org/InStock",
+          "url": `https://tonymultiventures.com/properties/${property.id}`
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is this property verified and documented?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, all properties listed by Tony Multi Ventures, including this one, undergo strict verification and have confirmed titles."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I schedule a viewing for this property?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Absolutely. You can schedule a physical or virtual viewing by contacting our agent via WhatsApp or the contact form."
+            }
+          }
+        ]
+      },
+      {
+        "@type": "Person",
+        "name": "Tony Multi Ventures Agent",
+        "jobTitle": "Premium Real Estate Consultant",
+        "url": "https://tonymultiventures.com/contact"
+      }
+    ]
+  };
+
   return (
-    <div className="min-h-screen pb-16">
-      <div className="max-w-6xl mx-auto py-6 px-4">
+    <main className="min-h-screen pb-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <article className="max-w-6xl mx-auto py-6 px-4">
         <div className="flex items-center justify-between mb-4 animate-fade-in">
           <Link href="/properties">
             <Button variant="ghost" className="gap-2 group" data-testid="button-back">
@@ -119,7 +177,8 @@ export default function PropertyDetail() {
         <div className="relative aspect-[16/9] rounded-2xl mb-8 overflow-hidden animate-fade-in-up group">
           <img
             src={property.imageUrl || "/images/property-1.png"}
-            alt={property.name}
+            alt={`High resolution view of ${property.name} located in ${property.location}`}
+            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             data-testid="img-property-detail"
           />
@@ -171,13 +230,40 @@ export default function PropertyDetail() {
             </div>
 
             <div className="animate-fade-in-up stagger-3">
+              <h2 className="font-sans text-xl font-semibold mb-4" data-testid="text-tldr-title">
+                At a Glance (TL;DR)
+              </h2>
+              <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10 mb-8">
+                <ul className="list-disc pl-5 space-y-2 text-muted-foreground font-mono">
+                  <li><strong>Property Type:</strong> {property.propertyType}</li>
+                  <li><strong>Location:</strong> {property.location}</li>
+                  <li><strong>Price:</strong> {formatPrice(property.price)} (NGN)</li>
+                  <li><strong>Status:</strong> {property.status.charAt(0).toUpperCase() + property.status.slice(1)}</li>
+                  <li><strong>Great For:</strong> Discerning buyers looking for premium real estate investments in Nigeria.</li>
+                </ul>
+              </div>
+
               <h2 className="font-sans text-xl font-semibold mb-4" data-testid="text-about-title">
                 About This Property
               </h2>
-              <div className="bg-muted/30 rounded-2xl p-6">
+              <div className="bg-muted/30 rounded-2xl p-6 mb-8">
                 <p className="text-muted-foreground font-mono leading-relaxed whitespace-pre-wrap" data-testid="text-detail-description">
                   {property.description}
                 </p>
+              </div>
+
+              <h2 className="font-sans text-xl font-semibold mb-4" data-testid="text-faq-title">
+                Frequently Asked Questions
+              </h2>
+              <div className="bg-muted/30 rounded-2xl p-6 space-y-4">
+                <div>
+                  <h4 className="font-semibold text-foreground">Is this property verified?</h4>
+                  <p className="text-sm text-muted-foreground font-mono mt-1">Yes, all Tony Multi Ventures listings undergo strict legal verification and document checks.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground">Can I schedule a physical viewing?</h4>
+                  <p className="text-sm text-muted-foreground font-mono mt-1">Yes, please use the WhatsApp Enquire button to arrange a convenient time for a guided tour.</p>
+                </div>
               </div>
             </div>
 
@@ -190,15 +276,24 @@ export default function PropertyDetail() {
               </a>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground font-mono pt-4 border-t border-dashed">
-              <Calendar className="h-4 w-4" />
-              <span data-testid="text-detail-date">
-                Listed on {new Date(property.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </span>
+            <div className="flex flex-col gap-1 text-sm text-muted-foreground font-mono pt-4 border-t border-dashed">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span data-testid="text-detail-date">
+                  Listed on {new Date(property.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs opacity-70">
+                 <span>Last Updated: {new Date(property.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}</span>
+              </div>
             </div>
           </div>
 
@@ -211,7 +306,7 @@ export default function PropertyDetail() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </article>
+    </main>
   );
 }

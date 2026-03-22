@@ -28,14 +28,16 @@ function getWhatsAppUrl(property: Property) {
 
 export function PropertyCard({ property }: PropertyCardProps) {
   return (
-    <Card
-      className="group smooth-shadow card-shine flex flex-col overflow-hidden transition-all duration-300"
-      data-testid={`card-property-${property.id}`}
-    >
+    <article className="group h-full col-span-1 flex">
+      <Card
+        className="w-full h-full smooth-shadow card-shine flex flex-col overflow-hidden transition-all duration-300"
+        data-testid={`card-property-${property.id}`}
+      >
       <div className="relative aspect-[4/3] img-zoom rounded-t-[inherit]">
         <img
           src={property.imageUrl || "/images/property-1.png"}
-          alt={property.name}
+          alt={`Exterior view of ${property.name} in ${property.location}`}
+          loading="lazy"
           className="w-full h-full object-cover rounded-t-[inherit]"
           data-testid={`img-property-${property.id}`}
         />
@@ -113,6 +115,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </Link>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </article>
   );
 }

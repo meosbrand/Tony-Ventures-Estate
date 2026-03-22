@@ -26,7 +26,7 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen">
       <section className="relative py-24 md:py-36 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
         <div className="absolute top-20 right-[10%] w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse-soft" />
@@ -233,6 +233,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }
