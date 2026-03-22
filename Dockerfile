@@ -33,4 +33,4 @@ ENV PORT=5000
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx drizzle-kit push --force && node dist/index.cjs"]
+CMD ["sh", "-c", "NODE_TLS_REJECT_UNAUTHORIZED=0 npx drizzle-kit push --force && node dist/index.cjs"]
