@@ -16,7 +16,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NODE_PG_FORCE_NATIVE
-        value: "false"
+        value: "0"
       - key: CLIENT_URL
         value: https://tonymultiventures.vercel.app
       - key: AI_PROVIDER
