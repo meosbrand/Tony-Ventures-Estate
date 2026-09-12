@@ -43,6 +43,14 @@ const loginRateLimiter = rateLimit({
   },
 });
 
+// Health check rate limiter: allow monitoring platforms while preventing abuse
+const healthRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -73,6 +81,17 @@ export async function registerRoutes(
   const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
+  });
+
+  // Health check endpoint for Render (and other platforms)
+  app.get("/api/health", healthRateLimiter, async (_req, res) => {
+    try {
+      await pool.query("SELECT 1");
+      res.json({ status: "ok", db: "connected" });
+    } catch (error) {
+      console.error("Health check DB error:", error);
+      res.status(503).json({ status: "error", db: "disconnected" });
+    }
   });
 
   // SEO & Generative AI Routes

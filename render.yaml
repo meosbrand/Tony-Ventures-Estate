@@ -5,14 +5,15 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
-    healthCheckPath: /api/properties
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: SESSION_SECRET
         generateValue: true
       - key: PORT
-        value: 5000
+        value: 10000
       - key: NODE_ENV
         value: production
       - key: NODE_PG_FORCE_NATIVE
