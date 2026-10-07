@@ -37,6 +37,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useUpload } from "@/hooks/use-upload";
+import { PropertyMediaManager } from "@/components/admin/PropertyMediaManager";
 import {
   Plus,
   Pencil,
@@ -49,8 +50,15 @@ import {
   Image,
   TrendingUp,
   UserPlus,
+  Film,
+  Box,
+  LayoutPanelTop,
+  FileText,
+  HardDrive,
 } from "lucide-react";
-import type { Property, Lead } from "@shared/schema";
+import type { Lead, PropertyWithMediaFlags } from "@shared/schema";
+
+type Property = PropertyWithMediaFlags;
 
 const propertyFormSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -76,18 +84,23 @@ interface AdminDashboardProps {
 
 function PropertyForm({
   property,
+  onSaved,
   onClose,
 }: {
   property?: Property;
+  onSaved: (saved: Property, created: boolean) => void;
   onClose: () => void;
 }) {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string>(property?.imageUrl || "");
-  const { uploadFile, isUploading } = useUpload({
+  const { uploadFile, isUploading, progress } = useUpload({
     onSuccess: (response) => {
       const path = response.objectPath;
       setImagePreview(path);
       form.setValue("imageUrl", path);
+    },
+    onError: (error) => {
+      toast({ title: "Image upload failed", description: error.message, variant: "destructive" });
     },
   });
 
@@ -119,19 +132,19 @@ function PropertyForm({
         return res.json();
       }
     },
-    onSuccess: () => {
+    onSuccess: (saved: Property) => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
       queryClient.invalidateQueries({ queryKey: ["/api/properties/featured"] });
       toast({
         title: property ? "Property Updated" : "Property Created",
         description: property
           ? "The property has been updated successfully."
-          : "A new property has been created.",
+          : "Now add videos, 3D models or floor plans in the other tabs.",
       });
-      onClose();
+      onSaved(saved, !property);
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to save property.", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to save property.", variant: "destructive" });
     },
   });
 
@@ -322,7 +335,7 @@ function PropertyForm({
             <label className="cursor-pointer">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 className="hidden"
                 onChange={handleImageUpload}
                 data-testid="input-property-image"
@@ -330,7 +343,7 @@ function PropertyForm({
               <Button type="button" variant="secondary" size="sm" className="gap-2" asChild>
                 <span>
                   <Upload className="h-4 w-4" />
-                  {isUploading ? "Uploading..." : "Upload Image"}
+                  {isUploading ? `Uploading ${progress}%` : "Upload Image"}
                 </span>
               </Button>
             </label>
@@ -373,6 +386,69 @@ function PropertyForm({
   );
 }
 
+/** Property dialog: details first; media tabs unlock once the property exists. */
+function PropertyEditor({ property, onClose }: { property?: Property; onClose: () => void }) {
+  const [current, setCurrent] = useState<Property | undefined>(property);
+  const [tab, setTab] = useState("details");
+
+  return (
+    <Tabs value={tab} onValueChange={setTab}>
+      <TabsList className="mb-4 bg-muted/40 p-1 flex-wrap h-auto" data-testid="tabs-property-editor">
+        <TabsTrigger value="details" className="gap-2"><FileText className="h-4 w-4" />Details</TabsTrigger>
+        <TabsTrigger value="video" className="gap-2" disabled={!current} data-testid="tab-media-video">
+          <Film className="h-4 w-4" />Video
+        </TabsTrigger>
+        <TabsTrigger value="3d" className="gap-2" disabled={!current} data-testid="tab-media-3d">
+          <Box className="h-4 w-4" />3D &amp; Tour
+        </TabsTrigger>
+        <TabsTrigger value="floorplans" className="gap-2" disabled={!current} data-testid="tab-media-floorplans">
+          <LayoutPanelTop className="h-4 w-4" />Floor plans
+        </TabsTrigger>
+      </TabsList>
+      {!current && (
+        <p className="text-xs text-muted-foreground mb-3">Save the property first to add video, 3D and floor plans.</p>
+      )}
+      <TabsContent value="details">
+        <PropertyForm
+          property={current}
+          onClose={onClose}
+          onSaved={(saved, created) => {
+            if (created) {
+              setCurrent(saved);
+              setTab("video");
+            } else {
+              onClose();
+            }
+          }}
+        />
+      </TabsContent>
+      {current && (
+        <>
+          <TabsContent value="video"><PropertyMediaManager propertyId={current.id} section="video" /></TabsContent>
+          <TabsContent value="3d"><PropertyMediaManager propertyId={current.id} section="3d" /></TabsContent>
+          <TabsContent value="floorplans"><PropertyMediaManager propertyId={current.id} section="floorplans" /></TabsContent>
+        </>
+      )}
+    </Tabs>
+  );
+}
+
+function StorageMeter() {
+  const { data } = useQuery<{ usedBytes: number; budgetBytes: number }>({
+    queryKey: ["/api/admin/media/usage"],
+  });
+  if (!data) return null;
+  const pct = Math.min(100, Math.round((data.usedBytes / data.budgetBytes) * 100));
+  return (
+    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground font-mono" data-testid="text-storage-usage">
+      <HardDrive className="h-4 w-4" />
+      <span className={pct >= 90 ? "text-destructive" : undefined}>
+        Media {(data.usedBytes / 1024 / 1024).toFixed(0)} / {(data.budgetBytes / 1024 / 1024).toFixed(0)} MB
+      </span>
+    </div>
+  );
+}
+
 export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
   const [editProperty, setEditProperty] = useState<Property | undefined>();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -393,7 +469,11 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
       queryClient.invalidateQueries({ queryKey: ["/api/properties/featured"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/media/usage"] });
       toast({ title: "Property Deleted" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete property.", variant: "destructive" });
     },
   });
 
@@ -430,10 +510,13 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
               Welcome, {user.username}
             </p>
           </div>
-          <Button variant="ghost" onClick={onLogout} className="gap-2" data-testid="button-logout">
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-4">
+            <StorageMeter />
+            <Button variant="ghost" onClick={onLogout} className="gap-2" data-testid="button-logout">
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -503,14 +586,29 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                     Add Property
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Add New Property</DialogTitle>
                   </DialogHeader>
-                  <PropertyForm onClose={() => setShowCreateDialog(false)} />
+                  <PropertyEditor onClose={() => setShowCreateDialog(false)} />
                 </DialogContent>
               </Dialog>
             </div>
+
+            <Dialog open={!!editProperty} onOpenChange={(open) => !open && setEditProperty(undefined)}>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Property</DialogTitle>
+                </DialogHeader>
+                {editProperty && (
+                  <PropertyEditor
+                    key={editProperty.id}
+                    property={editProperty}
+                    onClose={() => setEditProperty(undefined)}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
 
             {propsLoading ? (
               <div className="space-y-3">
@@ -541,6 +639,8 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           <h3 className="font-sans font-semibold truncate">{property.name}</h3>
                           <Badge variant="secondary">{property.propertyType}</Badge>
                           {property.featured && <Badge>Featured</Badge>}
+                          {property.hasVideo && <Badge variant="outline" className="gap-1"><Film className="h-3 w-3" />Video</Badge>}
+                          {property.has3d && <Badge variant="outline" className="gap-1"><Box className="h-3 w-3" />3D</Badge>}
                         </div>
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3 text-primary/50" />
@@ -551,28 +651,15 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="rounded-full"
-                              onClick={() => setEditProperty(property)}
-                              data-testid={`button-edit-${property.id}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Edit Property</DialogTitle>
-                            </DialogHeader>
-                            <PropertyForm
-                              property={editProperty}
-                              onClose={() => setEditProperty(undefined)}
-                            />
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="rounded-full"
+                          onClick={() => setEditProperty(property)}
+                          data-testid={`button-edit-${property.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button
                           size="icon"
                           variant="ghost"

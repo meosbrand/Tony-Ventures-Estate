@@ -3,18 +3,32 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcryptjs";
-import { setupAuth } from "./auth";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
-import { insertPropertySchema, insertLeadSchema } from "@shared/schema";
+import { insertPropertySchema, insertLeadSchema, type InsertProperty, type Property } from "@shared/schema";
+import { IMAGE_MIMES, IMAGE_MAX_BYTES } from "@shared/media-limits";
 import { pool } from "./db";
 import { streamChatResponse, transcribeAudio, textToSpeech } from "./ai-provider";
 import {
   isSupabaseConfigured,
-  uploadFile as supabaseUpload,
-  ensureBucket,
+  uploadImage,
+  ensureBuckets,
+  deleteImageByUrl,
+  removeMediaObjects,
+  IMAGE_BUCKET,
+  MEDIA_BUCKET,
 } from "./supabase-storage";
+import { requireAdmin, requireSameOrigin, parseIntParam } from "./middleware/security";
+import { sniffImageMime, isAllowedImageUrl } from "./media/validate";
+import { ensureMediaSchema } from "./media/ensure-schema";
+import {
+  registerMediaRoutes,
+  startMediaCleanup,
+  toPublicMedia,
+  withMediaFlags,
+  mediaPathsForProperty,
+} from "./media/routes";
 
 declare module "express-session" {
   interface SessionData {
@@ -23,11 +37,19 @@ declare module "express-session" {
   }
 }
 
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.adminId) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-  next();
+/**
+ * Listing photos may only reference the bundled /images/* assets or our own buckets.
+ * On update, values already stored on the property are accepted unchanged.
+ */
+function checkListingImages(data: Partial<InsertProperty>, existing?: Property): string | null {
+  const known = new Set([existing?.imageUrl, ...(existing?.images ?? [])].filter(Boolean));
+  const allowed = (url: string) =>
+    known.has(url) || isAllowedImageUrl(url, process.env.SUPABASE_URL, [IMAGE_BUCKET, MEDIA_BUCKET]);
+
+  if (data.imageUrl === "") data.imageUrl = null;
+  if (data.imageUrl && !allowed(data.imageUrl)) return "Image must be uploaded through the admin panel";
+  if (data.images && !data.images.every(allowed)) return "Image must be uploaded through the admin panel";
+  return null;
 }
 
 // Brute-force protection: 5 failed login attempts per 15 minutes per IP
@@ -78,10 +100,28 @@ export async function registerRoutes(
     })
   );
 
+  // Every state-changing /api request must come from our own site (CSRF protection).
+  app.use("/api", requireSameOrigin);
+
+  // Media features degrade (500s on media routes) rather than taking the whole site down.
+  await ensureMediaSchema().catch((err) =>
+    console.error("Could not create the property_media table; run migrations/0001_property_media.sql:", err)
+  );
+  startMediaCleanup();
+
+  // Listing photos only; videos and 3D models go straight from the browser to storage.
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: IMAGE_MAX_BYTES, files: 1 },
   });
+  const singleImage = (req: Request, res: Response, next: NextFunction) =>
+    upload.single("file")(req, res, (err: unknown) => {
+      if (!err) return next();
+      const tooLarge = err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE";
+      res.status(tooLarge ? 413 : 400).json({
+        error: tooLarge ? `Image is too large (max ${IMAGE_MAX_BYTES / 1024 / 1024} MB)` : "Invalid upload",
+      });
+    });
 
   // Health check endpoint for Render (and other platforms)
   app.get("/api/health", healthRateLimiter, async (_req, res) => {
@@ -145,25 +185,26 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   });
 
   if (isSupabaseConfigured()) {
-    ensureBucket().catch(console.error);
+    ensureBuckets().catch(console.error);
 
     app.post(
       "/api/uploads/upload",
       requireAdmin,
-      upload.single("file"),
+      singleImage,
       async (req, res) => {
         try {
           if (!req.file)
             return res.status(400).json({ error: "No file provided" });
-          const publicUrl = await supabaseUpload(
-            req.file.buffer,
-            req.file.originalname,
-            req.file.mimetype
-          );
+          // Trust the bytes, not the browser-supplied type or file name.
+          const mime = sniffImageMime(req.file.buffer);
+          if (!mime || !IMAGE_MIMES[mime]) {
+            return res.status(400).json({ error: "Only JPEG, PNG, WebP or AVIF images are allowed" });
+          }
+          const publicUrl = await uploadImage(req.file.buffer, mime);
           res.json({ url: publicUrl, objectPath: publicUrl });
-        } catch (error: any) {
+        } catch (error) {
           console.error("Upload error:", error);
-          res.status(500).json({ error: error.message || "Upload failed" });
+          res.status(500).json({ error: "Upload failed" });
         }
       }
     );
@@ -179,7 +220,7 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   app.get("/api/properties", async (req, res) => {
     try {
       const props = await storage.getProperties();
-      res.json(props);
+      res.json(await withMediaFlags(props));
     } catch (error) {
       console.error("GET /api/properties error:", error);
       res.status(500).json({ error: "Failed to fetch properties" });
@@ -189,19 +230,26 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   app.get("/api/properties/featured", async (req, res) => {
     try {
       const props = await storage.getFeaturedProperties();
-      res.json(props);
+      res.json(await withMediaFlags(props));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch featured properties" });
     }
   });
 
   app.get("/api/properties/:id", async (req, res) => {
+    const id = parseIntParam(req.params.id);
+    if (!id) return res.status(404).json({ error: "Property not found" });
     try {
-      const id = parseInt(String(req.params.id));
       const property = await storage.getProperty(id);
       if (!property)
         return res.status(404).json({ error: "Property not found" });
-      res.json(property);
+      const media = toPublicMedia(await storage.getMediaForProperty(id, true));
+      res.json({
+        ...property,
+        hasVideo: media.some((m) => m.kind === "video"),
+        has3d: media.some((m) => m.kind === "model3d" || m.kind === "tour"),
+        media,
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch property" });
     }
@@ -210,6 +258,8 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   app.post("/api/properties", requireAdmin, async (req, res) => {
     try {
       const parsed = insertPropertySchema.parse(req.body);
+      const imageError = checkListingImages(parsed);
+      if (imageError) return res.status(400).json({ error: imageError });
       const property = await storage.createProperty(parsed);
       res.status(201).json(property);
     } catch (error: any) {
@@ -218,13 +268,28 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   });
 
   app.patch("/api/properties/:id", requireAdmin, async (req, res) => {
+    const id = parseIntParam(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid property id" });
     try {
-      const id = parseInt(String(req.params.id));
       const partialSchema = insertPropertySchema.partial();
       const parsed = partialSchema.parse(req.body);
+      const existing = await storage.getProperty(id);
+      if (!existing)
+        return res.status(404).json({ error: "Property not found" });
+      const imageError = checkListingImages(parsed, existing);
+      if (imageError) return res.status(400).json({ error: imageError });
       const property = await storage.updateProperty(id, parsed);
       if (!property)
         return res.status(404).json({ error: "Property not found" });
+      // Free the replaced photo so it doesn't count against storage.
+      if (
+        parsed.imageUrl !== undefined &&
+        existing.imageUrl &&
+        existing.imageUrl !== property.imageUrl &&
+        !property.images?.includes(existing.imageUrl)
+      ) {
+        deleteImageByUrl(existing.imageUrl).catch((e) => console.error("Old image cleanup failed:", e));
+      }
       res.json(property);
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Invalid property data" });
@@ -232,9 +297,19 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   });
 
   app.delete("/api/properties/:id", requireAdmin, async (req, res) => {
+    const id = parseIntParam(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid property id" });
     try {
-      const id = parseInt(String(req.params.id));
-      await storage.deleteProperty(id);
+      const property = await storage.getProperty(id);
+      const mediaPaths = await mediaPathsForProperty(id);
+      await storage.deleteProperty(id); // media rows cascade
+      // Remove the files only once the rows are gone, so a failed delete loses nothing.
+      if (isSupabaseConfigured()) {
+        removeMediaObjects(mediaPaths).catch((e) => console.error("Media cleanup failed:", e));
+        if (property?.imageUrl) {
+          deleteImageByUrl(property.imageUrl).catch((e) => console.error("Image cleanup failed:", e));
+        }
+      }
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete property" });
@@ -261,8 +336,9 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   });
 
   app.patch("/api/leads/:id", requireAdmin, async (req, res) => {
+    const id = parseIntParam(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid lead id" });
     try {
-      const id = parseInt(String(req.params.id));
       const { status } = req.body;
       if (
         !status ||
@@ -279,8 +355,9 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   });
 
   app.delete("/api/leads/:id", requireAdmin, async (req, res) => {
+    const id = parseIntParam(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid lead id" });
     try {
-      const id = parseInt(String(req.params.id));
       await storage.deleteLead(id);
       res.status(204).send();
     } catch (error) {
@@ -305,9 +382,16 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
       if (!passwordMatch) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      req.session.adminId = user.id;
-      req.session.adminUsername = user.username;
-      res.json({ id: user.id, username: user.username });
+      // New session ID on login so a pre-planted session cookie can't be hijacked.
+      req.session.regenerate((err) => {
+        if (err) return res.status(500).json({ error: "Login failed" });
+        req.session.adminId = user.id;
+        req.session.adminUsername = user.username;
+        req.session.save((saveErr) => {
+          if (saveErr) return res.status(500).json({ error: "Login failed" });
+          res.json({ id: user.id, username: user.username });
+        });
+      });
     } catch (error) {
       res.status(500).json({ error: "Login failed" });
     }
@@ -316,6 +400,11 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
   app.post("/api/admin/logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) return res.status(500).json({ error: "Logout failed" });
+      res.clearCookie("connect.sid", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
       res.json({ success: true });
     });
   });
@@ -327,6 +416,9 @@ Sitemap: https://tonymultiventures.com/sitemap.xml`);
       res.status(401).json({ error: "Not authenticated" });
     }
   });
+
+  // Registered after the login/logout/session routes above (see registerMediaRoutes).
+  registerMediaRoutes(app);
 
   app.post("/api/chatbot", async (req, res) => {
     try {

@@ -3,6 +3,7 @@ import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { getAllowedOrigins, contentSecurityPolicyDirectives } from "./middleware/security";
 
 if (process.env.NODE_ENV !== "production") {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -28,28 +29,26 @@ declare module "http" {
 // Security headers (helmet)
 app.use(
   helmet({
-    // Allow inline styles needed by Tailwind/Shadcn in dev
-    contentSecurityPolicy: process.env.NODE_ENV === "production",
+    // Vite's dev server injects inline scripts, so CSP is production-only.
+    contentSecurityPolicy:
+      process.env.NODE_ENV === "production"
+        ? { useDefaults: false, directives: contentSecurityPolicyDirectives() }
+        : false,
   })
 );
 
 // Cross-Origin Resource Sharing (CORS) - Support Split Architecture (Vercel Frontend -> Render Backend)
 app.use((req, res, next) => {
-  const allowedOrigins = process.env.CLIENT_URL 
-    ? process.env.CLIENT_URL.split(',') 
-    : ['https://tonymultiventures.vercel.app'];
-  
   const origin = req.headers.origin;
-  
-  // In development, allow all. In production, securely match the allowed Vercel origins.
+
+  // In development, allow all. In production, only echo back our own site origins.
   if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     res.header("Access-Control-Allow-Origin", origin || "*");
-  } else if (origin && allowedOrigins.includes(origin)) {
+  } else if (origin && getAllowedOrigins().includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
-  } else {
-    res.header("Access-Control-Allow-Origin", allowedOrigins[0]);
+    res.header("Vary", "Origin");
   }
-  
+
   res.header("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
@@ -81,26 +80,15 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Request log: method, path, status and timing only. Response bodies are never logged
+// because they contain lead contact details and session data.
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+      log(`${req.method} ${path} ${res.statusCode} in ${Date.now() - start}ms`);
     }
   });
 

@@ -10,6 +10,8 @@ A full-stack real estate web application for Tony Multi Ventures. Admins manage 
 - **Lead Capture** — Collect visitor inquiries and manage them through the admin panel with status tracking
 - **WhatsApp Integration** — One-click WhatsApp inquiry buttons on every property
 - **Image Uploads** — Upload property images via Supabase Storage
+- **Property Video** — Walkthrough videos are compressed to 720p MP4 in the admin's browser, then uploaded straight to Supabase Storage
+- **3D & Floor Plans** — `.glb` 3D models (interactive viewer), Matterport/Kuula tour links and 2D floor plan images
 - **Responsive Design** — Mobile-friendly interface with dark mode support
 
 ## Tech Stack
@@ -48,6 +50,9 @@ A full-stack real estate web application for Tony Multi Ventures. Admins manage 
 | `SUPABASE_URL` | For image uploads | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | For image uploads | Supabase service role key |
 | `SUPABASE_STORAGE_BUCKET` | No | Storage bucket name (default: property-images) |
+| `SUPABASE_MEDIA_BUCKET` | No | Bucket for videos, 3D models and floor plans (default: property-media) |
+| `MEDIA_STORAGE_BUDGET_MB` | No | Uploads are refused past this total (default: 900, under Supabase Free's 1 GB) |
+| `TOUR_EMBED_HOSTS` | No | Comma-separated hosts allowed for 3D tour links (default: my.matterport.com,kuula.co) |
 
 ## Quick Start (Local Development)
 
@@ -111,7 +116,7 @@ Access the admin panel at `/admin`.
 3. **For the database:** Go to Settings > Database, copy the connection string and use it as `DATABASE_URL`
 4. **For image storage:**
    - Go to Settings > API, copy the Project URL (`SUPABASE_URL`) and the service role key (`SUPABASE_SERVICE_ROLE_KEY`)
-   - The app will automatically create a `property-images` storage bucket on startup
+   - The app automatically creates (or updates) the `property-images` and `property-media` buckets on startup, including their allowed file types and size limits
 5. Add these values to your `.env` file or hosting environment variables
 
 ## Deployment
@@ -245,9 +250,26 @@ ollama pull gemma3          # Google's open model
 | `OLLAMA_BASE_URL` | No | Ollama API URL (default: `http://localhost:11434/v1`) |
 | `OLLAMA_MODEL` | No | Model name to use (default: `llama3.2`) |
 
+## Property Media (Video, 3D, Floor Plans)
+
+Managed from the property dialog in `/admin` (tabs **Video**, **3D & Tour**, **Floor plans**; available after the property is saved).
+
+- **Video**: up to 4 minutes, 3 per property. The browser re-encodes to H.264/AAC 720p MP4 (about 1.5 Mbps, 30 fps max, kept under 45 MB) and grabs a poster frame. Works best in Chrome or Edge.
+- **3D model**: one `.glb` (glTF Binary) file up to 50 MB, 2 per property. Draco and KTX2 compression are supported; the decoders are self-hosted under `/decoders/`.
+- **Virtual tour**: an https link from an allowed host (`TOUR_EMBED_HOSTS`), shown in a sandboxed iframe.
+- **Floor plans**: JPEG/PNG/WebP up to 10 MB each.
+
+Upload flow: the API issues a single-use signed URL for a server-chosen path → the browser uploads directly to Supabase (the file never passes through the API server) → the API checks the stored file's size and leading bytes before publishing it. Uploads abandoned for 24 hours are cleaned up automatically.
+
+The `property_media` table is created automatically on startup (`server/media/ensure-schema.ts`); `migrations/0001_property_media.sql` has the same SQL for running by hand.
+
 ## Security
 
 - **Rate limiting** on admin login: 5 attempts per 15 minutes per IP (brute-force protection)
+- **CSRF protection**: state-changing API requests must come from the site's own origin (`CLIENT_URL` plus the tonymultiventures domains)
+- **Upload validation**: file type allowlists on both buckets plus server-side magic-byte checks; uploaded file names are always chosen by the server
+- **Content Security Policy** (enforced by the API server; report-only on Vercel until confirmed clean)
+- **Session regeneration** on login, and request logs never include response bodies
 - **HTTP security headers** via [Helmet.js](https://helmetjs.github.io/)
 - **bcrypt** password hashing (12 salt rounds)
 - **Session-based auth** with secure, httpOnly cookies
