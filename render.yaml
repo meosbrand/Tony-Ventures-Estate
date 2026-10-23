@@ -35,3 +35,9 @@ services:
         sync: false
       - key: SUPABASE_STORAGE_BUCKET
         value: property-images
+      - key: SUPABASE_MEDIA_BUCKET
+        value: property-media
+      - key: MEDIA_STORAGE_BUDGET_MB
+        value: 900
+      - key: TOUR_EMBED_HOSTS
+        value: my.matterport.com,kuula.co

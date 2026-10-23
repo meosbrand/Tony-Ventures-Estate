@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
+import { PropertyMediaGallery } from "@/components/media/PropertyMediaGallery";
 import {
   ArrowLeft,
   MapPin,
@@ -17,7 +18,7 @@ import {
   Share2,
   Heart,
 } from "lucide-react";
-import type { Property } from "@shared/schema";
+import type { Property, PropertyWithMedia } from "@shared/schema";
 
 function formatPrice(price: string | number) {
   const num = typeof price === "string" ? parseFloat(price) : price;
@@ -40,7 +41,7 @@ export default function PropertyDetail() {
   const params = useParams<{ id: string }>();
   const id = parseInt(params.id || "0");
 
-  const { data: property, isLoading } = useQuery<Property>({
+  const { data: property, isLoading } = useQuery<PropertyWithMedia>({
     queryKey: ["/api/properties", id],
     enabled: !!id,
   });
@@ -215,6 +216,10 @@ export default function PropertyDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            {property.media?.length > 0 && (
+              <PropertyMediaGallery media={property.media} propertyName={property.name} />
+            )}
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {statCards.map((stat, i) => (
                 <Card key={stat.testId} className={`smooth-shadow border-0 animate-fade-in-up stagger-${i + 1}`} data-testid={stat.testId}>

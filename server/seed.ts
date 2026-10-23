@@ -8,6 +8,14 @@ export async function seedDatabase() {
     const adminUsername = process.env.ADMIN_USERNAME || "Admin";
     const adminPassword = process.env.ADMIN_PASSWORD || "admin01";
 
+    // Never create a production admin with the publicly documented default password.
+    if (process.env.NODE_ENV === "production" && !process.env.ADMIN_PASSWORD) {
+      console.error(
+        "ERROR: ADMIN_PASSWORD is not set, so no admin user was created. Set it and restart."
+      );
+      return;
+    }
+
     if (adminPassword === "admin01") {
       console.warn(
         "\n⚠️  WARNING: Using default admin password 'admin01'." +

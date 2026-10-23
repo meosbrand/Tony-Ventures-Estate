@@ -17,5 +17,8 @@ databaseUrl.searchParams.delete("sslmode");
 export const pool = new Pool({
   connectionString: databaseUrl.toString(),
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+  // Without this, an unreachable database (e.g. a paused Supabase project) makes startup
+  // hang silently and the platform health check times out with nothing in the logs.
+  connectionTimeoutMillis: 10_000,
 });
 export const db = drizzle(pool, { schema });

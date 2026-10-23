@@ -14,3 +14,6 @@ replit.nix
 .upm/
 Tony Multi Ventures - Real Estate Web.md
 .agent/
+
+# Copied from three at build time (see vite.config.ts)
+client/public/decoders/

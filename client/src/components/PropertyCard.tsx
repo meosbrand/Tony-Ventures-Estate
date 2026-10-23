@@ -2,11 +2,11 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Bed, Bath, Maximize, MessageCircle, ArrowRight } from "lucide-react";
+import { MapPin, Bed, Bath, Maximize, MessageCircle, ArrowRight, Film, Box } from "lucide-react";
 import type { Property } from "@shared/schema";
 
 interface PropertyCardProps {
-  property: Property;
+  property: Property & { hasVideo?: boolean; has3d?: boolean };
 }
 
 function formatPrice(price: string | number) {
@@ -49,6 +49,18 @@ export function PropertyCard({ property }: PropertyCardProps) {
           {property.featured && (
             <Badge className="backdrop-blur-sm" data-testid={`badge-featured-${property.id}`}>
               Featured
+            </Badge>
+          )}
+          {property.hasVideo && (
+            <Badge variant="secondary" className="backdrop-blur-sm bg-background/80 gap-1" data-testid={`badge-video-${property.id}`}>
+              <Film className="h-3 w-3" />
+              Video
+            </Badge>
+          )}
+          {property.has3d && (
+            <Badge variant="secondary" className="backdrop-blur-sm bg-background/80 gap-1" data-testid={`badge-3d-${property.id}`}>
+              <Box className="h-3 w-3" />
+              3D
             </Badge>
           )}
         </div>
