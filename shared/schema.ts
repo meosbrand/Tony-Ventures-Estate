@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, timestamp, boolean, decimal, uuid, index, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, timestamp, boolean, decimal, uuid, index, json, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -8,7 +8,7 @@ export const users = pgTable("admin_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-});
+}).enableRLS();
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -34,7 +34,7 @@ export const properties = pgTable("properties", {
   featured: boolean("featured").default(false),
   status: text("status").notNull().default("available"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+}).enableRLS();
 
 export const propertiesRelations = relations(properties, ({ many }) => ({
   leads: many(leads),
@@ -80,7 +80,7 @@ export const propertyMedia = pgTable(
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   },
   (table) => [index("property_media_property_kind_idx").on(table.propertyId, table.kind, table.status)]
-);
+).enableRLS();
 
 export type PropertyMedia = typeof propertyMedia.$inferSelect;
 export type InsertPropertyMedia = typeof propertyMedia.$inferInsert;
@@ -115,7 +115,7 @@ export const leads = pgTable("leads", {
   source: text("source").notNull().default("website"),
   status: text("status").notNull().default("new"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+}).enableRLS();
 
 export const leadsRelations = relations(leads, ({ one }) => ({
   property: one(properties, {
@@ -131,5 +131,17 @@ export const insertLeadSchema = createInsertSchema(leads).omit({
 
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type Lead = typeof leads.$inferSelect;
+
+// Admin login sessions, written by connect-pg-simple. Declared here so `drizzle-kit push`
+// keeps the table (and everyone's login) instead of dropping it as unknown.
+export const adminSessions = pgTable(
+  "admin_sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire", { precision: 6 }).notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)]
+).enableRLS();
 
 export * from "./models/chat";

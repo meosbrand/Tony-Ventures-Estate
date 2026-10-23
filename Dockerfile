@@ -20,6 +20,9 @@ COPY --from=builder /app/dist ./dist
 
 COPY shared ./shared
 
+# Schema applied on startup (server/ensure-schema.ts)
+COPY migrations ./migrations
+
 ENV NODE_ENV=production
 ENV PORT=10000
 

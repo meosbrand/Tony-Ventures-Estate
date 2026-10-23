@@ -261,7 +261,7 @@ Managed from the property dialog in `/admin` (tabs **Video**, **3D & Tour**, **F
 
 Upload flow: the API issues a single-use signed URL for a server-chosen path → the browser uploads directly to Supabase (the file never passes through the API server) → the API checks the stored file's size and leading bytes before publishing it. Uploads abandoned for 24 hours are cleaned up automatically.
 
-The `property_media` table is created automatically on startup (`server/media/ensure-schema.ts`); `migrations/0001_property_media.sql` has the same SQL for running by hand.
+All tables (including `property_media`) are created automatically on startup from `migrations/schema.sql`, so a new, empty database (e.g. a fresh Supabase project) needs no manual setup. Row Level Security is enabled on every table so Supabase's public REST API can't read them; the app connects as the table owner and is unaffected.
 
 ## Security
 

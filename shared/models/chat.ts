@@ -7,7 +7,7 @@ export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+}).enableRLS();
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
@@ -15,7 +15,7 @@ export const messages = pgTable("messages", {
   role: text("role").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+}).enableRLS();
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
   id: true,

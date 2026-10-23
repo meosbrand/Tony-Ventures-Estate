@@ -96,6 +96,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Tables first (a new database starts empty), then seed data.
+  const { ensureSchema } = await import("./ensure-schema");
+  await ensureSchema().catch((err) =>
+    console.error("Could not create database tables; run migrations/schema.sql by hand:", err)
+  );
   const { seedDatabase } = await import("./seed");
   await seedDatabase().catch(console.error);
   await registerRoutes(httpServer, app);

@@ -21,7 +21,6 @@ import {
 } from "./supabase-storage";
 import { requireAdmin, requireSameOrigin, parseIntParam } from "./middleware/security";
 import { sniffImageMime, isAllowedImageUrl } from "./media/validate";
-import { ensureMediaSchema } from "./media/ensure-schema";
 import {
   registerMediaRoutes,
   startMediaCleanup,
@@ -103,10 +102,6 @@ export async function registerRoutes(
   // Every state-changing /api request must come from our own site (CSRF protection).
   app.use("/api", requireSameOrigin);
 
-  // Media features degrade (500s on media routes) rather than taking the whole site down.
-  await ensureMediaSchema().catch((err) =>
-    console.error("Could not create the property_media table; run migrations/0001_property_media.sql:", err)
-  );
   startMediaCleanup();
 
   // Listing photos only; videos and 3D models go straight from the browser to storage.
